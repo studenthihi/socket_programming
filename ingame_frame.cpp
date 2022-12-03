@@ -1,5 +1,5 @@
 #include <wx/wx.h>
-#include"components/imagePanel.cpp"
+#include"components/imagePanel.h"
 using namespace std;
 
 class InGameFrame:public wxFrame{
