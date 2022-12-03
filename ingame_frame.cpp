@@ -1,7 +1,8 @@
-#include <wx/wx.h>
-#include"components/imagePanel.cpp"
+#include<wx/wx.h>
 #include<string>
 #include<vector>
+#include"components/imagePanel.cpp"
+
 using namespace std;
 
 #include"utils.cpp"
