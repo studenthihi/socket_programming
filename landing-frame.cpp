@@ -1,7 +1,7 @@
 #include "landing-frame.h"
 
 LandingFrame::LandingFrame(const wxString& title, const wxPoint& pos, const wxSize& size)
-	: wxFrame(NULL, wxID_ANY, title, pos, size) {
+	: wxFrame(NULL, wxID_ANY, title, pos, size), socketClient(NULL) {
 	auto font = wxFONTFAMILY_MODERN;
 	
 	// Set background
@@ -47,24 +47,88 @@ LandingFrame::LandingFrame(const wxString& title, const wxPoint& pos, const wxSi
 	sizer->AddStretchSpacer();
 	
 	background->SetSizer(sizer);
+
+	// Connect socket
+	socketClient = new wxSocketClient();
+	socketClient->SetEventHandler(*this, LD_SOCKET);
+	wxIPV4address adr;
+	adr.Hostname(_T("localhost"));
+	adr.Service(8080);
+	socketClient->SetNotify(wxSOCKET_CONNECTION_FLAG | wxSOCKET_INPUT_FLAG | wxSOCKET_LOST_FLAG);
+	socketClient->Notify(true);
+
+	if (socketClient->Connect(adr, false)) {
+		wxMessageBox("Failed to connect to game server. Please try another time!");
+		Close();
+	}
 }
 
 void LandingFrame::OnEnter(wxCommandEvent& event) {
-	std::string nameStr = (name->GetValue()).ToStdString();
-	if (validRegister(nameStr)) {
-		WaitingFrame* waitingFrame = new WaitingFrame("Waiting", GetPosition(), GetSize(), nameStr);
-		waitingFrame->Show(true);
-		Close();
+	nameStr = trim((name->GetValue()).ToStdString());
+	int sz = nameStr.size();
+	if (sz == 0) {
+		wxMessageBox("Please enter a valid name!");
+		return;
 	}
-	else {
-		wxMessageBox("Invalid name, please try another one!");
+	char* buffer = new char[sz + 2];
+	buffer[0] = SendCode::ID_USER_NAME;
+	for (int i = 0; i < sz; ++i) {
+		buffer[i + 1] = nameStr[i];
+	}
+	buffer[sz + 1] = '\0';
+	socketClient->Write(buffer, sizeof(buffer));
+	if (socketClient->GetLastIOWriteSize() != sizeof(buffer)) {
+		wxMessageBox("Failed to reach server! :(");
+		Close();
 	}
 }
 
-bool LandingFrame::validRegister(std::string name) {
-	return name.size() % 2 == 0;
+void LandingFrame::OnSocket(wxSocketEvent& event) {
+	wxSocketBase* sock = event.GetSocket();
+	
+	switch (event.GetSocketEvent()) {
+	case wxSOCKET_CONNECTION: {
+		break;
+	}
+	case wxSOCKET_INPUT: {
+		char buffer[10];
+		sock->Read(buffer, sizeof(buffer));
+		if (sock->GetLastIOReadSize() > 0) {
+			if (buffer[0] == ReceiveCode::ID_INVALID_NAME) {
+				wxMessageBox("Invalid name, please try another one!");
+			}
+			else if (buffer[0] == ReceiveCode::ID_ACCEPT_USER) {
+				WaitingFrame* waitingFrame = new WaitingFrame("Waiting", GetPosition(), GetSize(), nameStr, socketClient);
+				waitingFrame->Show(true);
+				Close();
+			}
+			else if (buffer[0] == ReceiveCode::ID_REFUSE_USER) {
+				wxMessageBox("The game room is full. Please try another time! :(");
+				Close();
+			}
+		}
+		break;
+	}
+	case wxSOCKET_LOST: {
+		wxMessageBox("Lost connection with server! :(");
+		Close();
+	}
+	}
+}
+
+std::string LandingFrame::trim(std::string s) {
+	std::string t = "";
+	int n = s.size();
+	int i = 0, j = n - 1;
+	while (i < n && s[i] == ' ') ++i;
+	while (j > i && s[j] == ' ') --j;
+	for (; i <= j; ++i) {
+		t += s[i];
+	}
+	return t;
 }
 
 wxBEGIN_EVENT_TABLE(LandingFrame, wxFrame)
 	EVT_BUTTON(LD_ENTER_BUTTON, LandingFrame::OnEnter)
+	EVT_SOCKET(LD_SOCKET, LandingFrame::OnSocket)
 wxEND_EVENT_TABLE()
