@@ -4,13 +4,9 @@ InGameFrame::InGameFrame(const wxString &title, const wxPoint &pos, const wxSize
 {
     // ===== Load data ======
     this->socketClient = socket;
-    this->last_message = first_question;
-
-    // // Tell server that client is ready to play
-    // socketClient->Write("Give me question", strlen("Give me question"));
-    // vector<string> data;
-
-    analyse_message(data);
+    
+    vector<string> data;
+    deserialize((char*)first_question.c_str(), data);
 
     if (data.size() == 0){
         cout << "Error: Cannot load question" << endl;
@@ -89,21 +85,20 @@ InGameFrame::InGameFrame(const wxString &title, const wxPoint &pos, const wxSize
     this->SetSizer(sizer);
 
     //Init socket
-    // socketClient = new wxSocketClient();
-	// socketClient->SetEventHandler(*this, IG_SOCKET);
-	// wxIPV4address adr;
-	// adr.Hostname(_T("localhost"));
-	// adr.Service(8080);
-	// socketClient->SetNotify(wxSOCKET_CONNECTION_FLAG | wxSOCKET_INPUT_FLAG | wxSOCKET_LOST_FLAG);
-	// socketClient->Notify(true);
+    socketClient = new wxSocketClient();
+	socketClient->SetEventHandler(*this, IG_SOCKET);
+	wxIPV4address adr;
+	adr.Hostname(_T("localhost"));
+	adr.Service(8080);
+	socketClient->SetNotify(wxSOCKET_CONNECTION_FLAG | wxSOCKET_INPUT_FLAG | wxSOCKET_LOST_FLAG);
+	socketClient->Notify(true);
 
-	// if (socketClient->Connect(adr, false)) {
-	// 	// wxMessageBox("Failed to connect to game server. Please try another time!");
-	// 	// Close();
-    //     cout << "Failed to connect to game server. Please try another time!" << endl;
-	// }
+	if (socketClient->Connect(adr, false)) {
+		// wxMessageBox("Failed to connect to game server. Please try another time!");
+		// Close();
+        cout << "Failed to connect to game server. Please try another time!" << endl;
+	}
 
-    // cout << "Message received: " << last_message << endl;
 }
 
 // ================== Event Handler ==================
@@ -118,9 +113,34 @@ void InGameFrame::OnSocket(wxSocketEvent& event)
             char buffer[1024];
             sock->Read(buffer, 1024);
             wxString str(buffer, wxConvUTF8);
+
+            // Time out message
+            if (buffer[0] == TIME_OUT){
+                wxMessageBox("Time out!");
+                Close();
+            }
+            else if (buffer[0] == WRONG_ANSWER){
+                wxMessageBox("Wrong answer");
+                Close();
+            }
+            else if (buffer[0] == WIN_GAME){
+                wxMessageBox("You win!");
+                Close();
+            }
+            else if (buffer[0] == TRUE_ANSWER){
+                this->last_message = buffer;
+                vector<string> data; 
+                deserialize(buffer, data);
+
+                text->ChangeValue("Question " + data[1]);
+                btn_answer11->SetLabel("A. " + data[2]);
+                btn_answer12->SetLabel("B. " + data[3]);
+                btn_answer21->SetLabel("C. " + data[4]);
+                btn_answer22->SetLabel("D. " + data[5]);
+            }
+
             
-            this->last_message = buffer;
-            cout << "Message saved: "<< last_message << endl;
+            // cout << "Message saved: "<< last_message << endl;
             break;
         }
         case wxSOCKET_LOST:
@@ -140,7 +160,7 @@ void InGameFrame::OnSize(wxSizeEvent &e)
 
 void InGameFrame::OnClick(wxCommandEvent &e)
 {
-    cout << "FRAME OnClick, id = " << e.GetId() << endl;
+    cout << "Button OnClick, id = " << e.GetId() << endl;
     // e.Skip();
     char buffer[1024];
     int id = e.GetId();
@@ -154,64 +174,46 @@ void InGameFrame::OnClick(wxCommandEvent &e)
 
     else if (id == option1_id | id == option2_id | id == option3_id | id == option4_id){
         cout << "Answer" << endl;
-        char answer[2];
+        char answer[3];
         answer[0] = ANSWER;
         if (id == option1_id) answer[1] = 'A';
         else if (id == option2_id) answer[1] = 'B';
         else if (id == option3_id) answer[1] = 'C';
         else answer[1] ='D';
+        answer[2] = '\0';
 
-        socketClient->Write(answer, 2); // send answer to server
-        vector<string> data; // receive result from server, if true server will send next question
-        int code = analyse_message(data);
-
-        if (code = TRUE_ANSWER){
-            text->ChangeValue("Question " + data[1]);
-            btn_answer11->SetLabel("A. " + data[2]);
-            btn_answer12->SetLabel("B. " + data[3]);
-            btn_answer21->SetLabel("C. " + data[4]);
-            btn_answer22->SetLabel("D. " + data[5]);
-        }
-        else if (code == WRONG_ANSWER){
-            // wxMessageBox("Oops... You answered wrong", "Win");
-            // Close();
-        }
-        else if (code == WIN_GAME){
-            // wxMessageBox("Congratulation! You win the game", "Win");
-            // Close();
-        }
-
-        // TODO win or lose
+        socketClient->Write(answer, 3); // send answer to server
     }
 }
 
 
 
 // ================== Utility function to receive data from server ====================
-int InGameFrame::analyse_message(vector<string> &data){
-    char buffer[1024];
-    strcpy(buffer, last_message.c_str());
- 
-    if (strlen(buffer) == 0) return -1;
+// int InGameFrame::analyse_message(vector<string> &data){
+//     char buffer[1024];
+//     strcpy(buffer, last_message.c_str());
 
-    if (buffer[0] == TRUE_ANSWER){
-        deserialize(buffer, data);
-        return TRUE_ANSWER;
-    }
-    else if (buffer[0] == WRONG_ANSWER){
-        cout << "Wrong answer :<<<<" << endl;
-        return WRONG_ANSWER;
-    }
-    else if (buffer[0] == WIN_GAME){
-        cout << "Game win :>>>>>" << endl;
-        return WIN_GAME;
-    }
-    return 0;
-}
+//     if (strlen(buffer) == 0) {
+//         return -1;
+//     }
+
+//     if (buffer[0] == TRUE_ANSWER){
+//         deserialize(buffer, data);
+//         return TRUE_ANSWER;
+//     }
+//     else if (buffer[0] == WRONG_ANSWER){
+//         cout << "Wrong answer :<<<<" << endl;
+//         return WRONG_ANSWER;
+//     }
+//     else if (buffer[0] == WIN_GAME){
+//         cout << "Game win :>>>>>" << endl;
+//         return WIN_GAME;
+//     }
+//     return 0;
+// }
 
 void InGameFrame::deserialize(char *text, vector<string> &data){
-    cout <<text << endl;
-    char *ptr; // declare a ptr pointer  
+    char *ptr; 
     ptr = strtok(text, "|"); 
     while (ptr != NULL)  
     {  

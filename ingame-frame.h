@@ -47,11 +47,10 @@ class InGameFrame : public wxFrame{
         string last_message;
 
         // support function
-        int analyse_message(vector<string> &data);
+        // int analyse_message(vector<string> &data);
         void deserialize(char* text, vector<string>&data );
 
         wxDECLARE_EVENT_TABLE();
-
 };
 
 // void deserialize(char *text, vector<string> &data);
