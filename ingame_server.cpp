@@ -133,6 +133,7 @@ int main(int argc , char *argv[])
 				perror("send");
 			}
 
+			cout << "Welcome message sent" << endl;
 			//add new socket to array of sockets
 			for (int i = 0; i < max_clients; i++) {
 				//if position is empty
@@ -203,7 +204,9 @@ int main(int argc , char *argv[])
 					// finished all questions
 					if (cur_question_index == num_question){
 						printf("Client %d finished the quiz\n", i);
-						char message[] = "You finished the quiz";
+						char message[2];
+						message[0] = WIN_GAME;
+						message[1] = '\0';
 						if (send(socket, message, strlen(message), 0) != strlen(message)){
 							perror("send");
 						}
@@ -230,7 +233,9 @@ int main(int argc , char *argv[])
 				}
 				else{
 					printf("Wrong answer\n");
-					char message[] = "Wrong answer";
+					char message[2];
+					message[0] = WRONG_ANSWER;
+					message[1] = '\0';
 					if (send(socket, message, strlen(message), 0) != strlen(message)){
 						perror("send");
 					}

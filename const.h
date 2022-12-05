@@ -5,7 +5,10 @@ enum Code {
     ANSWER = 11,
     MOVE = 12,
     QUIT = 13,
-    TRUE_ANSWER = 97
+    
+    TRUE_ANSWER = 97,
+    WRONG_ANSWER = 98,
+    WIN_GAME = 100,
 };
 
 #endif
