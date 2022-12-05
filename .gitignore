@@ -32,3 +32,5 @@
 *.app
 
 /mycode
+/chat
+/nogui

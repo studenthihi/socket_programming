@@ -1,11 +1,14 @@
 #include<wx/wx.h>
 #include<string>
 #include<vector>
+#include<cstring>
 #include"components/imagePanel.cpp"
 
-using namespace std;
 
 #include"utils.cpp"
+#include"const.h"
+
+using namespace std;
 
 enum ButtonId
 {
@@ -17,9 +20,13 @@ enum ButtonId
     option4_id = 4
 };
 
+
+int receive_question(int socket, vector<string> &data);
+void deserialize(char* text, vector<string>&data );
+
 class InGameFrame:public wxFrame{
     public:
-        InGameFrame(const wxString &title, const wxPoint &pos, const wxSize &size);
+        InGameFrame(const wxString &title, const wxPoint &pos, const wxSize &size, int socket);
     private:
         void OnSize(wxSizeEvent &);
         void OnClick(wxCommandEvent &);
@@ -32,11 +39,8 @@ class InGameFrame:public wxFrame{
         wxButton* btn_answer22;
         wxTextCtrl* text; // question
 
-        // question set
-        vector<string> question_list;
-        vector<vector<string>> options;
-        vector<int> answer_list;
-        int cur_question = 0;
+        // socket
+        int socket;
 
 };
 
@@ -58,50 +62,48 @@ void InGameFrame::OnClick(wxCommandEvent &e)
     int id = e.GetId();
     if (id == move_id){
         cout << "Click move button"<< endl;
-        wxFrame* frame = new wxFrame(NULL, wxID_ANY, wxT("Hello World"), wxPoint(50,50), wxSize(800,600));
-        frame->Show();
+        char move[2];
+        move[0] = MOVE;
+        send(socket, move, 2, 0);
+        // move to waiting frame
+        
     }
 
     else if (id == option1_id | id == option2_id | id == option3_id | id == option4_id){
         cout << "Answer" << endl;
-        int answer = 0;
-        if (id == option1_id) answer = 0;
-        else if (id == option2_id) answer = 1;
-        else if (id == option3_id) answer = 2;
-        else answer = 3;
+        char answer[2];
+        answer[0] = ANSWER;
+        if (id == option1_id) answer[1] = 'A';
+        else if (id == option2_id) answer[1] = 'B';
+        else if (id == option3_id) answer[1] = 'C';
+        else answer[1] ='D';
 
-        if (answer == answer_list[cur_question]){
-            cout << "Answer Right";
-            cur_question += 1;
-            if (cur_question == question_list.size()){
-                cout << "Win" << endl;
-                e.Skip();
-            }
-            else {
-                text->ChangeValue("Question " + to_string(cur_question + 1) + ": " + question_list[cur_question]);
-                btn_answer11->SetLabel("A. " + options[cur_question][0]);
-                btn_answer12->SetLabel("B. " + options[cur_question][1]);
-                btn_answer21->SetLabel("C. " + options[cur_question][2]);
-                btn_answer22->SetLabel("D. " + options[cur_question][3]);
-            }
-        } 
-        else {
-            cout << "Answer Wrong" << endl;
-            e.Skip();
+        send(socket, answer, 2, 0);
+        vector<string> data;
+        int code = receive_question(socket, data);
+
+        if (code = TRUE_ANSWER){
+             text->ChangeValue("Question " + data[1]);
+            btn_answer11->SetLabel("A. " + data[2]);
+            btn_answer12->SetLabel("B. " + data[3]);
+            btn_answer21->SetLabel("C. " + data[4]);
+            btn_answer22->SetLabel("D. " + data[5]);
         }
+
+        // TODO win or lose
     }
 }
 
-InGameFrame::InGameFrame(const wxString &title, const wxPoint &pos, const wxSize &size) : wxFrame(NULL, wxID_ANY, title, pos, size)
+InGameFrame::InGameFrame(const wxString &title, const wxPoint &pos, const wxSize &size, int socket) : wxFrame(NULL, wxID_ANY, title, pos, size)
 {
     // ===== Load data ======
-    question_list = {"who is the president of VN?", "Which term is used to describe the legal profession in the USA?"};
-    options = {{"France", "Italy", "Spain", "Greece"}, 
-            {"The Chair", "The Stand", "The Robe", "The Bar"}};
-    answer_list = {1, 2};
+    this -> socket = socket;
+    // Tell server that client is ready to play
+    send(socket, "Give me question", strlen("Give me question"), 0);
+    vector<string> data;
+    receive_question(socket, data);
 
-    string question = "Question 1: " +  question_list[0];
-
+    // ===== Create two main panels =====
     wxImagePanel* panel_top = new wxImagePanel(this, wxT("background.jpeg"), wxBITMAP_TYPE_JPEG);
     wxPanel *panel_bottom = new wxPanel(this, wxID_ANY, wxDefaultPosition, wxSize(800, 200));
     panel_bottom->SetBackgroundColour(wxColor(20, 6, 59));
@@ -125,7 +127,7 @@ InGameFrame::InGameFrame(const wxString &title, const wxPoint &pos, const wxSize
     wxPanel* pseudoText = new wxPanel(panel_top, wxID_ANY, wxDefaultPosition,
                                   wxSize(600, 50));
                                 //   wxBORDER_THEME|wxTAB_TRAVERSAL);
-    text = new wxTextCtrl(pseudoText, wxID_ANY, question,
+    text = new wxTextCtrl(pseudoText, wxID_ANY, "Question " + data[1],
                                     wxDefaultPosition, wxDefaultSize,
                                     wxTE_CENTRE|wxBORDER_NONE);
     text->SetBackgroundColour(wxColor(20, 6, 59));
@@ -158,14 +160,14 @@ InGameFrame::InGameFrame(const wxString &title, const wxPoint &pos, const wxSize
     wxBoxSizer* sizer_column2 = new wxBoxSizer(wxVERTICAL);
 
 
-    btn_answer11 = new wxButton(column1, option1_id, wxT("A. " + options[0][0]), wxPoint(200,200), wxDefaultSize, 0);
-    btn_answer12 = new wxButton(column1, option2_id, wxT("B. " + options[0][1]), wxPoint(200,200), wxDefaultSize, 0);
+    btn_answer11 = new wxButton(column1, option1_id, wxT("A. " + data[2]), wxPoint(200,200), wxDefaultSize, 0);
+    btn_answer12 = new wxButton(column1, option2_id, wxT("B. " + data[3]), wxPoint(200,200), wxDefaultSize, 0);
     sizer_column1-> Add(btn_answer11,  1, wxEXPAND | wxALL, 10);
     sizer_column1-> Add(btn_answer12,  1, wxEXPAND | wxALL, 10);
     column1->SetSizerAndFit(sizer_column1);
 
-    btn_answer21 = new wxButton(column2, option3_id, wxT("C. " + options[0][2]), wxPoint(200,200), wxDefaultSize, 0);
-    btn_answer22 = new wxButton(column2, option4_id, wxT("D. " + options[0][3]), wxPoint(200,200), wxDefaultSize, 0);
+    btn_answer21 = new wxButton(column2, option3_id, wxT("C. " + data[4]), wxPoint(200,200), wxDefaultSize, 0);
+    btn_answer22 = new wxButton(column2, option4_id, wxT("D. " + data[5]), wxPoint(200,200), wxDefaultSize, 0);
     sizer_column2 -> Add(btn_answer21,  1, wxEXPAND | wxALL, 10);
     sizer_column2 -> Add(btn_answer22,  1, wxEXPAND | wxALL, 10);
     column2-> SetSizerAndFit(sizer_column2);
@@ -173,21 +175,26 @@ InGameFrame::InGameFrame(const wxString &title, const wxPoint &pos, const wxSize
     this->SetSizer(sizer);
 }
 
+int receive_question(int socket, vector<string> &data){
+    char buffer[1024];
+    memset(buffer, 0, sizeof(buffer));
+    int valread = recv(socket, buffer, 1024, 0);
+    cout << buffer << endl;
 
+    // if (buffer[0] == TRUE_ANSWER){
+        deserialize(buffer, data);
+        return TRUE_ANSWER;
+    // }
+    // return 0;
+}
 
-// Test this frame
-class MyApp : public wxApp
-{
-public:
-    virtual bool OnInit();
-};
-
-wxIMPLEMENT_APP(MyApp);
-
-bool MyApp::OnInit()
-{
-    wxInitAllImageHandlers(); // this is important to load image
-    InGameFrame *frame = new InGameFrame("Hello World", wxDefaultPosition, wxSize(800, 600));
-    frame->Show(true);
-    return true;
+void deserialize(char *text, vector<string> &data){
+    cout <<text << endl;
+    char *ptr; // declare a ptr pointer  
+    ptr = strtok(text, "|"); 
+    while (ptr != NULL)  
+    {  
+        data.push_back(ptr);
+        ptr = strtok (NULL, "|");  
+    }  
 }
