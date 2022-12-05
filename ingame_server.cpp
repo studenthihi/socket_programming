@@ -1,5 +1,4 @@
-//Example code: A simple server side code, which echos back the received message.
-//Handle multiple socket connections with select and fd_set on Linux
+
 #include <stdio.h>
 #include <string.h> //strlen
 #include <stdlib.h>
@@ -32,12 +31,15 @@ const int num_question = 4; // maximum number of questions
 int main(int argc , char *argv[])
 {	
 	// random num_question 
-	vector<string> serialized_questions {"a|1: What is the capital of Vietnam? | Hanoi | Ho Chi Minh | Haiphong | Da Nang",
-                                "a|2: What is the capital of Japan? | Tokyo | Osaka | Kyoto | Yokohama",
-                                "a|3: What is the capital of China? | Beijing | Shanghai | Guangzhou | Shenzhen",
-                                "a|4: What is the capital of India? | New Delhi | Mumbai | Kolkata | Chennai"}; 
-	vector<string> answer{"A", "A", "A", "A"};
-	// random_M_questions(serialized_questions, answer, num_question);
+	// vector<string> serialized_questions {"a|1: What is the capital of Vietnam? | Hanoi | Ho Chi Minh | Haiphong | Da Nang",
+    //                             "a|2: What is the capital of Japan? | Tokyo | Osaka | Kyoto | Yokohama",
+    //                             "a|3: What is the capital of China? | Beijing | Shanghai | Guangzhou | Shenzhen",
+    //                             "a|4: What is the capital of India? | New Delhi | Mumbai | Kolkata | Chennai"}; 
+	// vector<string> answer{"A", "A", "A", "A"};
+	vector<string> serialized_questions;
+	vector<string> answer;
+
+	random_M_questions(serialized_questions, answer, num_question);
 
 	 // track the current question index on each client, index = -1 means the client is disconnected
     int cur_question_index = 0;
@@ -158,12 +160,11 @@ int main(int argc , char *argv[])
 		// read message notifying that the client is ready to receive the question
 		memset(buffer, 0, sizeof(buffer));
 		valread = recv(socket, buffer, 1024, 0);
-		cout << valread << endl;
+		// cout << valread << endl;
 		cout << buffer << endl;
 
 		// send the first question
 		string question = serialized_questions[0];
-		cout << question << endl;
 		if (send(socket, question.c_str(), question.length(), 0) != question.length())
 			perror("send");
 
