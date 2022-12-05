@@ -36,7 +36,7 @@ int setupMasterSocket() {
 		exit(1);
 	}
 
-	cout << "Game server started.\nd";
+	cout << "Game server started.\n";
 	freeaddrinfo(result);
 
 	if (listen(masterSocket, MAX_SOCKET) < 0) {
@@ -52,6 +52,7 @@ int setupMasterSocket() {
 
 int setupMasterSocket() {
 	int master_socket;
+	int opt = 1;
 	struct sockaddr_in address;
 
 	//create a master socket
