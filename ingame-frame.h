@@ -5,10 +5,8 @@
 #include<cstring>
 #include"components/imagePanel.h"
 #include <wx/socket.h>
+#include"utils.h"
 
-
-// #include"utils.cpp"
-#include"const.h"
 
 using namespace std;
 
@@ -29,7 +27,8 @@ enum {
 
 class InGameFrame : public wxFrame{
     public:
-        InGameFrame(const wxString &title, const wxPoint &pos, const wxSize &size, wxSocketClient* socketClient, string first_question);
+        InGameFrame(const wxString &title, const wxPoint &pos, const wxSize &size, 
+            wxSocketClient* socketClient, string first_question);
     private:
         void OnSize(wxSizeEvent &);
         void OnClick(wxCommandEvent &);

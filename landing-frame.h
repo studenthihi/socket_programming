@@ -4,7 +4,6 @@
 #include <wx/socket.h>
 #include <string>
 #include "components/imagePanel.h"
-#include "waiting-frame.h"
 #include "utils.h"
 
 enum {

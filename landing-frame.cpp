@@ -1,4 +1,5 @@
 #include "landing-frame.h"
+#include "waiting-frame.h"
 
 LandingFrame::LandingFrame(const wxString& title, const wxPoint& pos, const wxSize& size)
 	: wxFrame(NULL, wxID_ANY, title, pos, size), socketClient(NULL) {
@@ -76,10 +77,9 @@ void LandingFrame::OnEnter(wxCommandEvent& event) {
 		buffer[i + 1] = nameStr[i];
 	}
 	buffer[sz + 1] = '\0';
-	socketClient->Write(buffer, sizeof(buffer));
-	if (socketClient->GetLastIOWriteSize() != sizeof(buffer)) {
-		wxMessageBox("Failed to reach server! :(");
-		Close();
+	socketClient->Write(buffer, strlen(buffer));
+	if (socketClient->GetLastIOWriteSize() != strlen(buffer)) {
+		wxMessageBox("Failed to join game, try again! :(");
 	}
 }
 
@@ -95,10 +95,13 @@ void LandingFrame::OnSocket(wxSocketEvent& event) {
 		sock->Read(buffer, sizeof(buffer));
 		if (sock->GetLastIOReadSize() > 0) {
 			if (buffer[0] == ReceiveCode::ID_INVALID_NAME) {
-				wxMessageBox("Invalid name, please try another one!");
+				wxMessageBox("Invalid name, please don't use '$' in your name!");
+			}
+			else if (buffer[0] == ReceiveCode::ID_DUPLICATE_NAME) {
+				wxMessageBox("Your name is a duplicate with another user, please try again!");
 			}
 			else if (buffer[0] == ReceiveCode::ID_ACCEPT_USER) {
-				WaitingFrame* waitingFrame = new WaitingFrame("Waiting", GetPosition(), GetSize(), nameStr, socketClient);
+				WaitingFrame* waitingFrame = new WaitingFrame("Waiting", GetPosition(), GetSize(), socketClient, false, nameStr);
 				waitingFrame->Show(true);
 				Close();
 			}
