@@ -29,7 +29,7 @@ enum {
 
 class InGameFrame : public wxFrame{
     public:
-        InGameFrame(const wxString &title, const wxPoint &pos, const wxSize &size, wxSocketClient* socketClient);
+        InGameFrame(const wxString &title, const wxPoint &pos, const wxSize &size, wxSocketClient* socketClient, string first_question);
     private:
         void OnSize(wxSizeEvent &);
         void OnClick(wxCommandEvent &);

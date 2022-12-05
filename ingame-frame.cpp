@@ -1,14 +1,14 @@
 #include"ingame-frame.h"
 
-InGameFrame::InGameFrame(const wxString &title, const wxPoint &pos, const wxSize &size, wxSocketClient* socket) : wxFrame(NULL, wxID_ANY, title, pos, size)
+InGameFrame::InGameFrame(const wxString &title, const wxPoint &pos, const wxSize &size, wxSocketClient* socket, string first_question) : wxFrame(NULL, wxID_ANY, title, pos, size)
 {
     // ===== Load data ======
     this->socketClient = socket;
+    this->last_message = first_question;
 
     // // Tell server that client is ready to play
-    socketClient->Write("Give me question", strlen("Give me question"));
-    vector<string> data;
-
+    // socketClient->Write("Give me question", strlen("Give me question"));
+    // vector<string> data;
 
     analyse_message(data);
 
