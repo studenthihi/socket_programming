@@ -14,6 +14,14 @@
 #include <string>
 #include "const.h"
 #include "utils.cpp"
+#include <thread>
+#include <atomic>
+#include <functional>
+#include <cstdio>
+#include <chrono>
+#include <ctime>
+
+
 using namespace std;	
 
 #define TRUE 1
@@ -22,24 +30,64 @@ using namespace std;
 	
 const int N  = 1; // maximum number of clients
 const int num_question = 4; // maximum number of questions
-// char serialized_questions[num_question][1000] = {"What is the capital of Vietnam? | Hanoi | Ho Chi Minh | Haiphong | Da Nang",
-//                                 "What is the capital of Japan? | Tokyo | Osaka | Kyoto | Yokohama",
-//                                 "What is the capital of China? | Beijing | Shanghai | Guangzhou | Shenzhen",
-//                                 "What is the capital of India? | New Delhi | Mumbai | Kolkata | Chennai"}; 
-// char answer[num_question][10] = {"A", "A", "A", "A"};
+const int TIME_LIMIT = 30; // time out for each question
+
+class Timer {
+	public:
+	Timer(int socket){
+		this->socket = socket;
+	}
+	~Timer(){
+		if (is_running){
+			stop();
+		}
+	}
+	
+	
+	typedef function<void(int)> Timeout;
+	typedef chrono::milliseconds Interval;
+
+	void start(int time_limit, const Interval &interval, const Timeout &timeout){
+		is_running = true;
+		timer_thread = std::thread([this, time_limit, interval, timeout](){
+			int count = 0;
+			while (is_running){
+				cout << count << endl;
+				this_thread::sleep_for(interval);
+				count += 1;
+				if (count >= time_limit) {
+					timeout(socket);
+					break;
+				}
+			}
+		});
+	}
+	void stop(){
+		cout << "Timer stopped" << endl;
+		is_running = false;
+		timer_thread.join();
+	}
+
+	
+	private:
+	int socket;
+	atomic_bool is_running{};
+	std::thread timer_thread{};
+
+};
 
 int main(int argc , char *argv[])
 {	
 	// random num_question 
-	// vector<string> serialized_questions {"a|1: What is the capital of Vietnam? | Hanoi | Ho Chi Minh | Haiphong | Da Nang",
-    //                             "a|2: What is the capital of Japan? | Tokyo | Osaka | Kyoto | Yokohama",
-    //                             "a|3: What is the capital of China? | Beijing | Shanghai | Guangzhou | Shenzhen",
-    //                             "a|4: What is the capital of India? | New Delhi | Mumbai | Kolkata | Chennai"}; 
-	// vector<string> answer{"A", "A", "A", "A"};
-	vector<string> serialized_questions;
-	vector<string> answer;
+	vector<string> serialized_questions {"a|1: What is the capital of United State? | Washington DC | Ho Chi Minh | Haiphong | Da Nang",
+                                "a|2: What is the capital of Japan? | Tokyo | Osaka | Kyoto | Yokohama",
+                                "a|3: What is the capital of China? | Beijing | Shanghai | Guangzhou | Shenzhen",
+                                "a|4: What is the capital of India? | New Delhi | Mumbai | Kolkata | Chennai"}; 
+	vector<string> answer{"A", "A", "A", "A"};
+	// vector<string> serialized_questions;
+	// vector<string> answer;
 
-	random_M_questions(serialized_questions, answer, num_question);
+	// random_M_questions(serialized_questions, answer, num_question);
 
 	 // track the current question index on each client, index = -1 means the client is disconnected
     int cur_question_index = 0;
@@ -129,11 +177,11 @@ int main(int argc , char *argv[])
 			printf("New connection , socket fd is %d , ip is : %s , port : %d\n" , new_socket , inet_ntoa(address.sin_addr) , 
 				ntohs(address.sin_port));
 
-			if( send(new_socket, message, strlen(message), 0) != strlen(message)) {
-				perror("send");
-			}
+			// if( send(new_socket, message, strlen(message), 0) != strlen(message)) {
+			// 	perror("send");
+			// }
 
-			cout << "Welcome message sent" << endl;
+			// cout << "Welcome message sent" << endl;
 			//add new socket to array of sockets
 			for (int i = 0; i < max_clients; i++) {
 				//if position is empty
@@ -155,27 +203,58 @@ int main(int argc , char *argv[])
 	int id = 0; //current client
 	int socket;
 
+	
 	while (true){
 		socket = client_socket[id];
+		Timer timer(socket);
 		
-		// read message notifying that the client is ready to receive the question
-		memset(buffer, 0, sizeof(buffer));
-		valread = recv(socket, buffer, 1024, 0);
+		// // read message notifying that the client is ready to receive the question
+		// memset(buffer, 0, sizeof(buffer));
+		// valread = recv(socket, buffer, 1024, 0);
 		// cout << valread << endl;
-		cout << buffer << endl;
+		// cout << buffer << endl;
 
-		// send the first question
-		string question = serialized_questions[0];
-		if (send(socket, question.c_str(), question.length(), 0) != question.length())
-			perror("send");
+		// // send the first question
+		// string question = serialized_questions[0];
+		// if (send(socket, question.c_str(), question.length(), 0) != question.length())
+		// 	perror("send");
 
-		cout << "First question sent: " << question << endl;
-
+		// cout << "First question sent: " << question << endl;
 
 		while (true) {	
-			// wait for answer from client
+
+			timer.start(15, chrono::milliseconds(1000), [](int s) {
+				cout << "Time out" << endl;
+				char buffer[2];
+				buffer[0] = TIME_OUT;
+				buffer[1] = '\0';
+				if (send(s, buffer ,2 , 0) != 2)
+					perror("send");
+				close(s);
+			});
+
+
+			cout << "HUhuhuh" << endl;
+
 			memset(buffer, 0, sizeof(buffer));
 			valread = recv(socket, buffer, 1024, 0);
+			timer.stop(); 
+
+
+			
+			cout << "Message received!" << endl;
+
+			// if time out, notify the client and move to the next client
+			// if (!timer.is_running){
+			// 	cout << "Time out" << endl;
+			// 	buffer[0] = TIME_OUT;
+			// 	buffer[1] = '\0';
+			// 	if (send(socket, buffer ,2 , 0) != 2)
+			// 		perror("send");
+
+			// 	// TODO: move to next client
+			// 	break;
+			// }
 			
 			if (valread == 0){
 				// some disconnected
@@ -219,6 +298,7 @@ int main(int argc , char *argv[])
 						string question = serialized_questions[cur_question_index];
 						if (send(socket, question.c_str(), question.length(), 0) != question.length())
 							perror("send");
+						cout << "Result and next question sent!" << endl;
 
 					}
 				}

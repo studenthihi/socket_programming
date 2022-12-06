@@ -27,10 +27,27 @@ InGameFrame::InGameFrame(const wxString &title, const wxPoint &pos, const wxSize
     // ====== Header ======
     wxPanel* header = new wxPanel(panel_top, wxID_ANY, wxDefaultPosition, wxSize(800, 40));
     wxButton *btn_move = new wxButton(header, move_id, "Move", wxPoint(0, 0), wxSize(60, 40));
-    wxButton *btn_quit = new wxButton(header, wxID_ANY, "Quit", wxPoint(0, 0), wxSize(60, 40));
+    wxButton *btn_quit = new wxButton(header, quit_id, "Quit", wxPoint(0, 0), wxSize(60, 40));
+
+    wxStaticText *countdown_text = new wxStaticText(header, wxID_ANY, "Time left:", wxPoint(0, 0), wxSize(140, 40));
+    countdown_text->SetForegroundColour(wxColor(255, 255, 255));
+    countdown_text->SetFont(wxFont(17, wxFONTFAMILY_DEFAULT, wxFONTSTYLE_NORMAL, wxFONTWEIGHT_BOLD));
+
+    timer_display = new wxStaticText(header, wxID_ANY, TIME_LIMIT, wxPoint(0, 0), wxSize(200, 40));
+    timer_display->SetForegroundColour(wxColor(255, 255, 255));
+    timer_display->SetFont(wxFont(17, wxFONTFAMILY_DEFAULT, wxFONTSTYLE_NORMAL, wxFONTWEIGHT_BOLD));
+
     wxBoxSizer *header_sizer = new wxBoxSizer(wxHORIZONTAL);
     header_sizer->Add(btn_move, 0, wxEXPAND | wxALL, 10);
     header_sizer->Add(btn_quit, 0, wxEXPAND | wxALL, 10);
+    header_sizer->Add(countdown_text, 0, wxEXPAND | wxTOP,20);
+    header_sizer->Add(timer_display, 0, wxEXPAND | wxTOP, 20);
+
+    // ======= Timer ========
+    timer = new wxTimer(this);
+    timer->SetOwner(this, IG_TIMER);
+    timer->Start(1000);
+
     header->SetSizerAndFit(header_sizer);
 
     // ====== Question Box ======
@@ -128,6 +145,9 @@ void InGameFrame::OnSocket(wxSocketEvent& event)
                 Close();
             }
             else if (buffer[0] == TRUE_ANSWER){
+                timer_display->SetLabel(TIME_LIMIT);
+                timer->Start(1000);
+
                 this->last_message = buffer;
                 vector<string> data; 
                 deserialize(buffer, data);
@@ -161,7 +181,8 @@ void InGameFrame::OnSize(wxSizeEvent &e)
 void InGameFrame::OnClick(wxCommandEvent &e)
 {
     cout << "Button OnClick, id = " << e.GetId() << endl;
-    // e.Skip();
+    timer->Stop();
+
     char buffer[1024];
     int id = e.GetId();
     if (id == move_id){
@@ -184,34 +205,14 @@ void InGameFrame::OnClick(wxCommandEvent &e)
 
         socketClient->Write(answer, 3); // send answer to server
     }
+    else if (id == quit_id){
+        Close();
+    }
 }
 
 
 
 // ================== Utility function to receive data from server ====================
-// int InGameFrame::analyse_message(vector<string> &data){
-//     char buffer[1024];
-//     strcpy(buffer, last_message.c_str());
-
-//     if (strlen(buffer) == 0) {
-//         return -1;
-//     }
-
-//     if (buffer[0] == TRUE_ANSWER){
-//         deserialize(buffer, data);
-//         return TRUE_ANSWER;
-//     }
-//     else if (buffer[0] == WRONG_ANSWER){
-//         cout << "Wrong answer :<<<<" << endl;
-//         return WRONG_ANSWER;
-//     }
-//     else if (buffer[0] == WIN_GAME){
-//         cout << "Game win :>>>>>" << endl;
-//         return WIN_GAME;
-//     }
-//     return 0;
-// }
-
 void InGameFrame::deserialize(char *text, vector<string> &data){
     char *ptr; 
     ptr = strtok(text, "|"); 
@@ -222,9 +223,26 @@ void InGameFrame::deserialize(char *text, vector<string> &data){
     }  
 }
 
+void InGameFrame::OnUpdateTimer(wxTimerEvent& e){
+    cout << "Timer is running" << endl;
+    if (timer->IsRunning()){
+        int old_time = wxAtoi(timer_display->GetLabel());
+        if (old_time == 0){
+            timer->Stop();
+        }
+        else {
+            old_time -= 1;
+            wxString new_time;
+            new_time << old_time;
+            timer_display->SetLabel(new_time);
+        }
+    }
+}
+
 
 wxBEGIN_EVENT_TABLE(InGameFrame, wxFrame)
     EVT_BUTTON(wxID_ANY, InGameFrame::OnClick)
     EVT_SIZE(InGameFrame::OnSize)
     EVT_SOCKET(IG_SOCKET, InGameFrame::OnSocket)
+    EVT_TIMER(IG_TIMER, InGameFrame::OnUpdateTimer)
 wxEND_EVENT_TABLE()

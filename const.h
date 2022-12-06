@@ -9,6 +9,8 @@ enum Code {
     TRUE_ANSWER = 97,
     WRONG_ANSWER = 98,
     WIN_GAME = 100,
+    TIME_OUT = 101,
+
 };
 
 #endif

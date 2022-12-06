@@ -78,16 +78,24 @@ void InGameFrame::OnClick(wxCommandEvent &e)
         else if (id == option3_id) answer[1] = 'C';
         else answer[1] ='D';
 
-        send(socket, answer, 2, 0);
-        vector<string> data;
+        send(socket, answer, 2, 0); // send answer to server
+        vector<string> data; // receive result from server, if true server will send next question
         int code = receive_question(socket, data);
 
         if (code = TRUE_ANSWER){
-             text->ChangeValue("Question " + data[1]);
+            text->ChangeValue("Question " + data[1]);
             btn_answer11->SetLabel("A. " + data[2]);
             btn_answer12->SetLabel("B. " + data[3]);
             btn_answer21->SetLabel("C. " + data[4]);
             btn_answer22->SetLabel("D. " + data[5]);
+        }
+        else if (code == WRONG_ANSWER){
+            wxMessageBox("Oops... You answered wrong", "Win");
+            // Close();
+        }
+        else if (code == WIN_GAME){
+            wxMessageBox("Congratulation! You win the game", "Win");
+            // Close();
         }
 
         // TODO win or lose
@@ -179,13 +187,21 @@ int receive_question(int socket, vector<string> &data){
     char buffer[1024];
     memset(buffer, 0, sizeof(buffer));
     int valread = recv(socket, buffer, 1024, 0);
-    cout << buffer << endl;
+    // cout << buffer << endl;
 
-    // if (buffer[0] == TRUE_ANSWER){
+    if (buffer[0] == TRUE_ANSWER){
         deserialize(buffer, data);
         return TRUE_ANSWER;
-    // }
-    // return 0;
+    }
+    else if (buffer[0] == WRONG_ANSWER){
+        cout << "Wrong answer :<<<<" << endl;
+        return WRONG_ANSWER;
+    }
+    else if (buffer[0] == WIN_GAME){
+        cout << "Game win :>>>>>" << endl;
+        return WIN_GAME;
+    }
+    return 0;
 }
 
 void deserialize(char *text, vector<string> &data){

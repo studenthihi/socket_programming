@@ -5,6 +5,7 @@
 #include<cstring>
 #include"components/imagePanel.h"
 #include <wx/socket.h>
+#include <wx/timer.h>
 
 
 // #include"utils.cpp"
@@ -23,9 +24,11 @@ enum ButtonId
 };
 
 enum {
-    IG_SOCKET = 7
+    IG_SOCKET = 7,
+    IG_TIMER = 8
 };
 
+const wxString TIME_LIMIT= "15";
 
 class InGameFrame : public wxFrame{
     public:
@@ -34,6 +37,8 @@ class InGameFrame : public wxFrame{
         void OnSize(wxSizeEvent &);
         void OnClick(wxCommandEvent &);
         void OnSocket(wxSocketEvent &e);
+        void OnUpdateTimer(wxTimerEvent &e);
+        
         
         // frame components
         wxButton* btn_answer11;
@@ -42,6 +47,10 @@ class InGameFrame : public wxFrame{
         wxButton* btn_answer22;
         wxTextCtrl* text; // question
 
+        // timer
+        wxTimer* timer;
+        wxStaticText* timer_display;
+        
         // socket
         wxSocketClient* socketClient;
         string last_message;
