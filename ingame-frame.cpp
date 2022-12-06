@@ -1,9 +1,10 @@
 #include"ingame-frame.h"
+#include "waiting-frame.h"
 
-InGameFrame::InGameFrame(const wxString &title, const wxPoint &pos, const wxSize &size, wxSocketClient* socket, string first_question) : wxFrame(NULL, wxID_ANY, title, pos, size)
+InGameFrame::InGameFrame(const wxString &title, const wxPoint &pos, const wxSize &size, 
+    wxSocketClient* socket, string first_question) : wxFrame(NULL, wxID_ANY, title, pos, size), socketClient(socket)
 {
     // ===== Load data ======
-    this->socketClient = socket;
     
     vector<string> data;
     deserialize((char*)first_question.c_str(), data);
@@ -36,6 +37,10 @@ InGameFrame::InGameFrame(const wxString &title, const wxPoint &pos, const wxSize
     timer_display = new wxStaticText(header, wxID_ANY, TIME_LIMIT, wxPoint(0, 0), wxSize(200, 40));
     timer_display->SetForegroundColour(wxColor(255, 255, 255));
     timer_display->SetFont(wxFont(17, wxFONTFAMILY_DEFAULT, wxFONTSTYLE_NORMAL, wxFONTWEIGHT_BOLD));
+
+    if (data[6] == '0') {
+        btn_move->Disable();
+    }
 
     wxBoxSizer *header_sizer = new wxBoxSizer(wxHORIZONTAL);
     header_sizer->Add(btn_move, 0, wxEXPAND | wxALL, 10);
@@ -100,21 +105,22 @@ InGameFrame::InGameFrame(const wxString &title, const wxPoint &pos, const wxSize
     column2-> SetSizerAndFit(sizer_column2);
 
     this->SetSizer(sizer);
+    socketClient->SetEventHandler(*this, IG_SOCKET);
 
-    //Init socket
-    socketClient = new wxSocketClient();
-	socketClient->SetEventHandler(*this, IG_SOCKET);
-	wxIPV4address adr;
-	adr.Hostname(_T("localhost"));
-	adr.Service(8080);
-	socketClient->SetNotify(wxSOCKET_CONNECTION_FLAG | wxSOCKET_INPUT_FLAG | wxSOCKET_LOST_FLAG);
-	socketClient->Notify(true);
+ //   //Init socket
+ //   socketClient = new wxSocketClient();
+	//socketClient->SetEventHandler(*this, IG_SOCKET);
+	//wxIPV4address adr;
+	//adr.Hostname(_T("localhost"));
+	//adr.Service(8080);
+	//socketClient->SetNotify(wxSOCKET_CONNECTION_FLAG | wxSOCKET_INPUT_FLAG | wxSOCKET_LOST_FLAG);
+	//socketClient->Notify(true);
 
-	if (socketClient->Connect(adr, false)) {
-		// wxMessageBox("Failed to connect to game server. Please try another time!");
-		// Close();
-        cout << "Failed to connect to game server. Please try another time!" << endl;
-	}
+	//if (socketClient->Connect(adr, false)) {
+	//	// wxMessageBox("Failed to connect to game server. Please try another time!");
+	//	// Close();
+ //       cout << "Failed to connect to game server. Please try another time!" << endl;
+	//}
 
 }
 
@@ -129,22 +135,31 @@ void InGameFrame::OnSocket(wxSocketEvent& event)
             // Read the data from the socket
             char buffer[1024];
             sock->Read(buffer, 1024);
-            wxString str(buffer, wxConvUTF8);
+            int sz = sock->GetLastIOReadSize();
+            if (sz <= 0) return;
+            buffer[sz] = '\0';
+            string str(buffer);
 
             // Time out message
-            if (buffer[0] == TIME_OUT){
+            if (buffer[0] == ReceiveCode::ID_TIME_OUT){
                 wxMessageBox("Time out!");
                 Close();
             }
-            else if (buffer[0] == WRONG_ANSWER){
-                wxMessageBox("Wrong answer");
+            else if (buffer[0] == ReceiveCode::ID_PING) {
+                char sendBuff[2];
+                sendBuff[0] = SendCode::ID_PING_ANS;
+                sendBuff[1] = '\0';
+                sock->Write(sendBuff, strlen(sendBuff));
+            }
+            else if (buffer[0] == ReceiveCode::ID_WRONG_ANSWER) {
+                wxMessageBox("Oh oh! Your answer is wrong, you're out of the game! :(");
                 Close();
             }
-            else if (buffer[0] == WIN_GAME){
-                wxMessageBox("You win!");
+            else if (buffer[0] == ReceiveCode::ID_WIN_GAME){
+                wxMessageBox("Congratulations, you win!");
                 Close();
             }
-            else if (buffer[0] == TRUE_ANSWER){
+            else if (buffer[0] == ReceiveCode::ID_QUESTION){
                 timer_display->SetLabel(TIME_LIMIT);
                 timer->Start(1000);
 
@@ -158,6 +173,11 @@ void InGameFrame::OnSocket(wxSocketEvent& event)
                 btn_answer21->SetLabel("C. " + data[4]);
                 btn_answer22->SetLabel("D. " + data[5]);
             }
+            else if (buffer[0] == ReceiveCode::ID_ALLOWED_MOVE) {
+                WaitingFrame* waitingFrame = new WaitingFrame("Waiting", GetPosition(), GetSize(), socketClient);
+                waitingFrame->Show(true);
+                Close();
+            }
 
             
             // cout << "Message saved: "<< last_message << endl;
@@ -165,8 +185,8 @@ void InGameFrame::OnSocket(wxSocketEvent& event)
         }
         case wxSOCKET_LOST:
         {
-            // wxMessageBox("Connection lost");
-            break;
+            wxMessageBox("Lost connection with server! :(");
+            Close();
         }
         default:
             break;
@@ -187,23 +207,22 @@ void InGameFrame::OnClick(wxCommandEvent &e)
     int id = e.GetId();
     if (id == move_id){
         cout << "Click move button"<< endl;
-        buffer[0] = MOVE;
+        buffer[0] = SendCode::ID_MOVE;
         buffer[1] = '\0';
-        socketClient->Write(buffer, 1024);
-        // Todo: move to waiting frame
+        socketClient->Write(buffer, strlen(buffer));
     }
 
-    else if (id == option1_id | id == option2_id | id == option3_id | id == option4_id){
+    else if (id == option1_id || id == option2_id || id == option3_id || id == option4_id){
         cout << "Answer" << endl;
         char answer[3];
-        answer[0] = ANSWER;
+        answer[0] = SendCode::ID_ANSWER;
         if (id == option1_id) answer[1] = 'A';
         else if (id == option2_id) answer[1] = 'B';
         else if (id == option3_id) answer[1] = 'C';
         else answer[1] ='D';
         answer[2] = '\0';
 
-        socketClient->Write(answer, 3); // send answer to server
+        socketClient->Write(answer, strlen(answer)); // send answer to server
     }
     else if (id == quit_id){
         Close();

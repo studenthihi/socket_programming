@@ -6,10 +6,7 @@
 #include"components/imagePanel.h"
 #include <wx/socket.h>
 #include <wx/timer.h>
-
-
-// #include"utils.cpp"
-#include"const.h"
+#include"utils.h"
 
 using namespace std;
 
@@ -32,7 +29,8 @@ const wxString TIME_LIMIT= "15";
 
 class InGameFrame : public wxFrame{
     public:
-        InGameFrame(const wxString &title, const wxPoint &pos, const wxSize &size, wxSocketClient* socketClient, string first_question);
+        InGameFrame(const wxString &title, const wxPoint &pos, const wxSize &size, 
+            wxSocketClient* socketClient, string first_question);
     private:
         void OnSize(wxSizeEvent &);
         void OnClick(wxCommandEvent &);
@@ -61,6 +59,3 @@ class InGameFrame : public wxFrame{
 
         wxDECLARE_EVENT_TABLE();
 };
-
-// void deserialize(char *text, vector<string> &data);
-// int receive_question(wxSocketClient* socketClient, vector<string> &data);

@@ -1,5 +1,9 @@
 #include "register.h"
 
+bool isValidName(string& s) {
+	return s.find('$') == string::npos;
+}
+
 unordered_map<int, string> findNPlayersSocketAndName(int masterSocket) {
 	char buffer[BUFLEN + 1];
 	char recvBuffer[BUFLEN + 1];
@@ -58,8 +62,8 @@ unordered_map<int, string> findNPlayersSocketAndName(int masterSocket) {
 					buffer[valread] = '\0';
 					if (buffer[0] == ReceiveCode::ID_USER_NAME) {
 						string name(buffer + 1);
-						cout << "Socket " << sd << " sent name " << name << "\n";
-						if (playerNames.find(name) == playerNames.end()) {
+						bool valid = isValidName(name);
+						if (playerNames.find(name) == playerNames.end() && valid) {
 							// Valid name, accept player
 							buffer[0] = SendCode::ID_ACCEPT_USER;
 							buffer[1] = '\0';
@@ -77,7 +81,7 @@ unordered_map<int, string> findNPlayersSocketAndName(int masterSocket) {
 							}
 						}
 						else {
-							buffer[0] = SendCode::ID_INVALID_NAME;
+							buffer[0] = valid ? SendCode::ID_DUPLICATE_NAME : SendCode::ID_INVALID_NAME;
 							buffer[1] = '\0';
 							if (send(sd, buffer, strlen(buffer), 0) < 0) {
 								cout << "Socket error when sending to socket " << sd << "\n";
