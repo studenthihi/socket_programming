@@ -48,7 +48,7 @@ unordered_map<int, string> findNPlayersSocketAndName(int masterSocket) {
 		for (int sd : candidateSocket) {
 			if (FD_ISSET(sd, &readfds)) {
 				int valread = recv(sd, buffer, BUFLEN, 0);
-				if (valread < 0) {
+				if (valread == SOCKET_ERROR) {
 					cout << "Client socket " << sd << " has disconnected\n";
 					close(sd);
 					if (sd2PlayerName.find(sd) != sd2PlayerName.end()) {
@@ -67,7 +67,7 @@ unordered_map<int, string> findNPlayersSocketAndName(int masterSocket) {
 							// Valid name, accept player
 							buffer[0] = SendCode::ID_ACCEPT_USER;
 							buffer[1] = '\0';
-							if (send(sd, buffer, strlen(buffer), 0) < 0) {
+							if (send(sd, buffer, strlen(buffer), 0) == SOCKET_ERROR) {
 								cout << "Socket error when sending to socket " << sd << "\n";
 								close(sd);
 								close(masterSocket);
@@ -83,7 +83,7 @@ unordered_map<int, string> findNPlayersSocketAndName(int masterSocket) {
 						else {
 							buffer[0] = valid ? SendCode::ID_DUPLICATE_NAME : SendCode::ID_INVALID_NAME;
 							buffer[1] = '\0';
-							if (send(sd, buffer, strlen(buffer), 0) < 0) {
+							if (send(sd, buffer, strlen(buffer), 0) == SOCKET_ERROR) {
 								cout << "Socket error when sending to socket " << sd << "\n";
 								close(sd);
 								close(masterSocket);
@@ -107,7 +107,7 @@ unordered_map<int, string> findNPlayersSocketAndName(int masterSocket) {
 			continue; // already a player, do not refuse
 		buffer[0] = SendCode::ID_REFUSE_USER;
 		buffer[1] = '\0';
-		if (send(sd, buffer, strlen(buffer), 0) < 0) {
+		if (send(sd, buffer, strlen(buffer), 0) == SOCKET_ERROR) {
 			cout << "Socket error when sending to socket " << sd << "\n";
 			close(sd);
 			close(masterSocket);

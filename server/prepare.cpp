@@ -19,7 +19,7 @@ void prepareGame(unordered_map<int, string>& sd2PlayerName, int client_socket[N]
 	for (int i = 0; i < N; ++i) {
 		int sd = client_socket[i];
 		buffer[3] = i + 1;
-		if (send(sd, buffer, strlen(buffer), 0) < 0) {
+		if (send(sd, buffer, strlen(buffer), 0) == SOCKET_ERROR) {
 			cout << "Socket error when sending to socket " << sd << "\n";
 			close(sd);
 			close(master_socket);
@@ -36,7 +36,7 @@ void prepareGame(unordered_map<int, string>& sd2PlayerName, int client_socket[N]
 	buffer[1] = '\0';
 	for (int i = 0; i < N; ++i) {
 		int sd = client_socket[i];
-		if (send(sd, buffer, strlen(buffer), 0) < 0) {
+		if (send(sd, buffer, strlen(buffer), 0) == SOCKET_ERROR) {
 			cout << "Socket error when sending to socket " << sd << "\n";
 			close(sd);
 			close(master_socket);

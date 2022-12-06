@@ -21,9 +21,10 @@
 #endif
 
 #define BUFLEN 512
+#define SOCKET_ERROR 0
 
-const int N = 2; // maximum number of clients
-const int num_question = 4;
+const int N = 3; // maximum number of clients
+const int num_question = 2;
 const int MAX_SOCKET = 3;
 
 enum SendCode {

@@ -72,7 +72,7 @@ void mainGame(int client_socket[N]) {
 		// [Stop timer]
 		timer.stop();
 
-		if (valread < 0) {
+		if (valread == SOCKET_ERROR) {
 			cleanup(id, client_socket, outgame_count);
 			id = (id + 1) % N;
 			continue;
@@ -116,10 +116,10 @@ bool pingPlayer(int sd) {
 	buffer[0] = SendCode::ID_PING;
 	buffer[1] = '\0';
 
-	if (send(sd, buffer, strlen(buffer), 0) < 0) {
+	if (send(sd, buffer, strlen(buffer), 0) == SOCKET_ERROR) {
 		return false;
 	}
-	if (recv(sd, buffer, sizeof(buffer), 0) < 0) {
+	if (recv(sd, buffer, sizeof(buffer), 0) == SOCKET_ERROR) {
 		return false;
 	}
 	return true;
@@ -133,7 +133,7 @@ void announceCurrentPlayer(int client_socket[N], int current, int& outgame_count
 
 	for (int i = 0; i < N; ++i) {
 		if (i != current && client_socket[i] > 0) {
-			if (send(client_socket[i], buffer, strlen(buffer), 0) < 0) {
+			if (send(client_socket[i], buffer, strlen(buffer), 0) == SOCKET_ERROR) {
 				cleanup(i, client_socket, outgame_count);
 			}
 		}
@@ -168,7 +168,7 @@ bool announceTA(int sd) {
 	char buffer[2];
 	buffer[0] = SendCode::ID_TRUE_ANSWER;
 	buffer[1] = '\0';
-	if (send(sd, buffer, strlen(buffer), 0) < 0) {
+	if (send(sd, buffer, strlen(buffer), 0) == SOCKET_ERROR) {
 		return false;
 	}
 	return true;
