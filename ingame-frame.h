@@ -55,6 +55,7 @@ class InGameFrame : public wxFrame{
 
         // support function
         // int analyse_message(vector<string> &data);
+        bool timedOut = false;
         void deserialize(char* text, vector<string>&data );
 
         wxDECLARE_EVENT_TABLE();

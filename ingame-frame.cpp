@@ -142,7 +142,8 @@ void InGameFrame::OnSocket(wxSocketEvent& event)
 
             // Time out message
             if (buffer[0] == ReceiveCode::ID_TIME_OUT){
-                wxMessageBox("Time out!");
+                timedOut = true;
+                wxMessageBox("You're out of time, bye bye!");
                 Close();
             }
             else if (buffer[0] == ReceiveCode::ID_PING) {
@@ -185,8 +186,10 @@ void InGameFrame::OnSocket(wxSocketEvent& event)
         }
         case wxSOCKET_LOST:
         {
-            wxMessageBox("Lost connection with server! :(");
-            Close();
+            if (!timedOut) {
+                wxMessageBox("Lost connection with server! :(");
+                Close();
+            }
         }
         default:
             break;

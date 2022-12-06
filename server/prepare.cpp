@@ -43,5 +43,5 @@ void prepareGame(unordered_map<int, string>& sd2PlayerName, int client_socket[N]
 			exit(1);
 		}
 	}
-	sleep(1);
+	sleep(2);
 }

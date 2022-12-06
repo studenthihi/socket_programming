@@ -60,6 +60,7 @@ void mainGame(int client_socket[N]) {
 			buffer[1] = '\0';
 			if (send(s, buffer ,2 , 0) != 2)
 				perror("send");
+			sleep(1);
 			close(s);
 		});
 
