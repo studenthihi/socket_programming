@@ -59,9 +59,9 @@ InGameFrame::InGameFrame(const wxString &title, const wxPoint &pos, const wxSize
     wxPanel* pseudoText = new wxPanel(panel_top, wxID_ANY, wxDefaultPosition,
                                   wxSize(600, 50));
                                 //   wxBORDER_THEME|wxTAB_TRAVERSAL);
-    text = new wxTextCtrl(pseudoText, wxID_ANY, "Question " + data[1],
+    text = new wxTextCtrl(pseudoText, wxID_ANY, "Question " + data[1], // question
                                     wxDefaultPosition, wxDefaultSize,
-                                    wxTE_CENTRE|wxBORDER_NONE);
+                                    wxTE_CENTRE|wxBORDER_NONE|wxTE_BESTWRAP|wxTE_MULTILINE);
     text->SetBackgroundColour(wxColor(20, 6, 59));
     text->SetForegroundColour(wxColor(255, 255, 255));
     text->SetFont(wxFont(15, wxFONTFAMILY_DEFAULT, wxFONTSTYLE_NORMAL, wxFONTWEIGHT_BOLD));

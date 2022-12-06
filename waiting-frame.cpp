@@ -18,6 +18,8 @@ WaitingFrame::WaitingFrame(const wxString& title, const wxPoint& pos, const wxSi
 	sizer->AddStretchSpacer();
 	text = new wxStaticText(background, wxID_ANY, "", wxDefaultPosition, wxDefaultSize, wxTE_CENTER);
 	text->SetFont(wxFont(16, font, wxFONTSTYLE_NORMAL, wxFONTWEIGHT_NORMAL));
+	text->SetForegroundColour(wxColor(255, 255, 255));
+
 	if (inGame) {
 		setTextByState(IN_GAME_UNKNOWN);
 	}
