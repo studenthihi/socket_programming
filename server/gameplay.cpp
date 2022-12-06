@@ -51,9 +51,26 @@ void mainGame(int client_socket[N]) {
 			continue;
 		}
 
+		// [Set timer]
+		Timer timer(socket);
+		timer.start(15, chrono::milliseconds(1000), [](int s) {
+			cout << "Time out" << endl;
+			char buffer[2];
+			buffer[0] = SendCode::ID_TIME_OUT;
+			buffer[1] = '\0';
+			if (send(s, buffer ,2 , 0) != 2)
+				perror("send");
+			close(s);
+		});
+
+
 		// [Waiting for answer]
 		memset(buffer, 0, sizeof(buffer));
 		valread = recv(socket, buffer, BUFLEN, 0);
+
+		// [Stop timer]
+		timer.stop();
+
 		if (valread < 0) {
 			cleanup(id, client_socket, outgame_count);
 			id = (id + 1) % N;

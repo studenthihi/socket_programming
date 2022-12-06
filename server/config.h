@@ -41,6 +41,7 @@ enum SendCode {
 	ID_WIN_ANNOUNCE = 16,
 	ID_QUESTION = 17,
 	ID_ALLOWED_MOVE = 18,
+	ID_TIME_OUT = 19,
 };
 enum ReceiveCode {
 	ID_USER_NAME = 5,

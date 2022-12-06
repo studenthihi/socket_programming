@@ -2,6 +2,7 @@
 #include <vector>
 #include "config.h"
 #include "utils.h"
+#include "timer.h"
 using namespace std;
 
 void mainGame(int client_socket[N]);
