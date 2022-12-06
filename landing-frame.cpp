@@ -19,8 +19,12 @@ LandingFrame::LandingFrame(const wxString& title, const wxPoint& pos, const wxSi
 	wxPanel* titlePanel = new wxPanel(background, wxID_ANY, wxDefaultPosition);
 	wxStaticText* subtitleText = new wxStaticText(titlePanel, wxID_ANY, "Welcome to", wxDefaultPosition, wxDefaultSize, wxTE_CENTER);
 	subtitleText->SetFont(wxFont(16, font, wxFONTSTYLE_NORMAL, wxFONTWEIGHT_NORMAL));
+	subtitleText->SetForegroundColour(wxColor(255, 255, 255));
+
 	wxStaticText* titleText = new wxStaticText(titlePanel, wxID_ANY, "Who wants to be a millionaire?", wxDefaultPosition, wxDefaultSize, wxTE_CENTER);
 	titleText->SetFont(wxFont(28, font, wxFONTSTYLE_NORMAL, wxFONTWEIGHT_EXTRABOLD));
+	titleText->SetForegroundColour(wxColor(255, 255, 255));
+
 	wxBoxSizer* titleSizer = new wxBoxSizer(wxVERTICAL);
 	titleSizer->AddStretchSpacer();
 	titleSizer->Add(subtitleText, wxSizerFlags().Expand());
@@ -34,6 +38,8 @@ LandingFrame::LandingFrame(const wxString& title, const wxPoint& pos, const wxSi
 	// [3] Input nickname
 	wxStaticText* namePrompt = new wxStaticText(background, wxID_ANY, "Please input your nickname to start:", wxDefaultPosition, wxDefaultSize, wxTE_CENTER);
 	namePrompt->SetFont(wxFont(12, font, wxFONTSTYLE_ITALIC, wxFONTWEIGHT_NORMAL));
+	namePrompt->SetForegroundColour(wxColor(255, 255, 255));
+
 	sizer->Add(namePrompt, 0, wxALIGN_CENTER | wxBOTTOM, 5);
 
 	name = new wxTextCtrl(background, wxID_ANY, wxEmptyString, wxDefaultPosition, wxSize(300, 40), wxTE_CENTER);
@@ -42,7 +48,7 @@ LandingFrame::LandingFrame(const wxString& title, const wxPoint& pos, const wxSi
 
 	wxButton* button = new wxButton(background, LD_ENTER_BUTTON, "Join game!");
 	button->SetFont(wxFont(16, font, wxFONTSTYLE_NORMAL, wxFONTWEIGHT_SEMIBOLD));
-	sizer->Add(button, 0, wxALIGN_RIGHT | wxRIGHT, 60);
+	sizer->Add(button, 0, wxALIGN_CENTER, 0);
 
 	// [4] Padding
 	sizer->AddStretchSpacer();

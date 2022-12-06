@@ -29,8 +29,11 @@ ListingFrame::ListingFrame(const wxString& title, const wxPoint& pos, const wxSi
 	// Notification field
     wxStaticText* titleText = new wxStaticText(background, wxID_ANY, "Game information", wxDefaultPosition, wxDefaultSize, wxTE_CENTER);
 	titleText->SetFont(wxFont(28, font, wxFONTSTYLE_NORMAL, wxFONTWEIGHT_NORMAL));
+    titleText->SetForegroundColour(wxColor(255, 255, 255));
+
 	wxStaticText* subtitleText = new wxStaticText(background, wxID_ANY, "There are " + to_string(n) + " players playing in order:", wxDefaultPosition, wxDefaultSize, wxTE_CENTER);
 	subtitleText->SetFont(wxFont(14, font, wxFONTSTYLE_NORMAL, wxFONTWEIGHT_NORMAL));
+    subtitleText->SetForegroundColour(wxColor(255, 255, 255));
 	
     sizer->Add(titleText, 0, wxALIGN_CENTER);
     sizer->AddSpacer(20);
@@ -54,6 +57,8 @@ ListingFrame::ListingFrame(const wxString& title, const wxPoint& pos, const wxSi
     std::string question = "You are player number " + to_string(order) + "!\n There are " + to_string(numQuestion) + " questions in this set.";
     wxStaticText* numOfQuestion = new wxStaticText(background, wxID_ANY, question, wxDefaultPosition, wxDefaultSize, wxTE_CENTER);
 	numOfQuestion->SetFont(wxFont(14, font, wxFONTSTYLE_NORMAL, wxFONTWEIGHT_NORMAL));
+    numOfQuestion->SetForegroundColour(wxColor(255, 255, 255));
+
     sizer->Add(numOfQuestion, 0, wxALIGN_CENTER | wxTOP, 10);
 
     sizer->AddStretchSpacer();
